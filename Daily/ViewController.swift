@@ -8,15 +8,31 @@
 
 import UIKit
 
-class ViewController: UITableViewController {
+protocol ReusableView: class {
+    static var defaultReuseIdentifier: String { get }
+}
 
+extension ReusableView where Self: UIView {
+    static var defaultReuseIdentifier: String {
+        return NSStringFromClass(self)
+    }
+}
+
+extension UITableViewCell: ReusableView {
+}
+
+class ViewController: UITableViewController {
+    var dailyItems: [String] = []
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
         self.title = "Daily"
         
-        let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(ViewController.addButtonTapped(_:)))
+        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: UITableViewCell.defaultReuseIdentifier)
+        
+        let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonTapped(_:)))
         self.navigationItem.rightBarButtonItem = addButton
     }
 
@@ -31,7 +47,8 @@ class ViewController: UITableViewController {
         let addAction = UIAlertAction(title: "Add", style: .default, handler: { (action: UIAlertAction) -> Void in
             let dailyTextField = ac.textFields![0] as UITextField
             
-            print(dailyTextField.text!)
+            self.dailyItems.append(dailyTextField.text!)
+            self.tableView!.reloadData()
             })
         addAction.isEnabled = false
         ac.addAction(addAction)
@@ -48,5 +65,19 @@ class ViewController: UITableViewController {
         })
         
         self.present(ac, animated: true, completion: nil)
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return 1;
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.dailyItems.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: UITableViewCell.defaultReuseIdentifier, for: indexPath)
+        cell.textLabel!.text = self.dailyItems[indexPath.row]
+        return cell
     }
 }
